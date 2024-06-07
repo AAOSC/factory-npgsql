@@ -38,7 +38,7 @@ sealed partial class IntervalHandler :
             Days = days,
             Months = months,
             Years = years
-        }.Build().Normalize();
+        }.Build();
     }
 
     public override int ValidateAndGetLength(Period value, NpgsqlParameter? parameter)
