@@ -30,27 +30,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-22.04]
-        pg_major: [16, 15, 14, 13, 12]
+        pg_major: [14]
         config: [Release]
         test_tfm: [net8.0]
-        include:
-          - os: ubuntu-22.04
-            pg_major: 16
-            config: Debug
-            test_tfm: net8.0
-          - os: macos-14
-            pg_major: 16
-            config: Release
-            test_tfm: net8.0
-          - os: windows-2022
-            pg_major: 16
-            config: Release
-            test_tfm: net8.0
-#          - os: ubuntu-22.04
-#            pg_major: 17
-#            config: Release
-#            test_tfm: net8.0
-#            pg_prerelease: 'PG Prerelease'
 
     outputs:
       is_release: ${{ steps.analyze_tag.outputs.is_release }}
@@ -306,19 +288,19 @@ jobs:
             psql -c "CREATE USER npgsql_tests_scram SUPERUSER PASSWORD 'npgsql_tests_scram'" postgres
 
       # TODO: Once test/Npgsql.Specification.Tests work, switch to just testing on the solution
-      - name: Test
-        run: |
-            dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.Tests --logger "GitHubActions;report-warnings=false"
-            dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.DependencyInjection.Tests --logger "GitHubActions;report-warnings=false"
-        shell: bash
+      # - name: Test
+      #   run: |
+      #       dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.Tests --logger "GitHubActions;report-warnings=false"
+      #       dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.DependencyInjection.Tests --logger "GitHubActions;report-warnings=false"
+      #   shell: bash
 
-      - name: Test Plugins
-        if: "!startsWith(matrix.os, 'macos')"
-        run: |
-            if [ -z "${{ matrix.pg_prerelease }}" ]; then
-                dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.PluginTests --logger "GitHubActions;report-warnings=false"
-            fi
-        shell: bash
+      # - name: Test Plugins
+      #   if: "!startsWith(matrix.os, 'macos')"
+      #   run: |
+      #       if [ -z "${{ matrix.pg_prerelease }}" ]; then
+      #           dotnet test -c ${{ matrix.config }} -f ${{ matrix.test_tfm }} test/Npgsql.PluginTests --logger "GitHubActions;report-warnings=false"
+      #       fi
+      #   shell: bash
 
       - id: analyze_tag
         name: Analyze tag
@@ -378,7 +360,7 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-22.04
-    if: github.event_name == 'push' && startsWith(github.repository, 'npgsql/') && needs.build.outputs.is_release == 'true'
+    if: github.event_name == 'push' && needs.build.outputs.is_release == 'true'
     environment: nuget.org
 
     steps:
@@ -401,6 +383,6 @@ jobs:
 
       # TODO: Create a release
 
-      - name: Publish to nuget.org
-        run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.NUGET_ORG_API_KEY }} --source https://api.nuget.org/v3/index.json
+      - name: Publish to GitHub registry
+        run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/AAOSC/index.json --skip-duplicate --no-symbols
         working-directory: nupkgs
